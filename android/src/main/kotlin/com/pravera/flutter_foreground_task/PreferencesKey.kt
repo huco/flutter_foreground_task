@@ -27,6 +27,7 @@ object PreferencesKey {
     const val PLAY_SOUND = "playSound"
     const val SHOW_WHEN = "showWhen"
     const val IS_STICKY = "isSticky"
+    const val CAN_SWIPE_AWAY = "canSwipeAway"
     const val VISIBILITY = "visibility"
     const val ICON_DATA = "iconData"
     const val BUTTONS = "buttons"

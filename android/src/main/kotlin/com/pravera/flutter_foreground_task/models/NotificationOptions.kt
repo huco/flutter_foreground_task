@@ -11,6 +11,7 @@ data class NotificationOptions(
     val channelName: String,
     val channelDescription: String?,
     val channelImportance: Int,
+    val canSwipeAway: Boolean,
     val priority: Int,
     val contentTitle: String,
     val contentText: String,
@@ -39,6 +40,7 @@ data class NotificationOptions(
             val playSound = prefs.getBoolean(PrefsKey.PLAY_SOUND, false)
             val showWhen = prefs.getBoolean(PrefsKey.SHOW_WHEN, false)
             val isSticky = prefs.getBoolean(PrefsKey.IS_STICKY, true)
+            val canSwipeAway = prefs.getBoolean(PrefsKey.CAN_SWIPE_AWAY, true)
             val visibility = prefs.getInt(PrefsKey.VISIBILITY, 1)
 
             val iconDataJson = prefs.getString(PrefsKey.ICON_DATA, null)
@@ -82,6 +84,7 @@ data class NotificationOptions(
                 playSound = playSound,
                 showWhen = showWhen,
                 isSticky = isSticky,
+                canSwipeAway = canSwipeAway,
                 visibility = visibility,
                 iconData = iconData,
                 buttons = buttons
@@ -104,6 +107,7 @@ data class NotificationOptions(
             val playSound = map?.get(PrefsKey.PLAY_SOUND) as? Boolean ?: false
             val showWhen = map?.get(PrefsKey.SHOW_WHEN) as? Boolean ?: false
             val isSticky = map?.get(PrefsKey.IS_STICKY) as? Boolean ?: true
+            val canSwipeAway = map?.get(PrefsKey.CAN_SWIPE_AWAY) as? Boolean ?: true
             val visibility = map?.get(PrefsKey.VISIBILITY) as? Int ?: 1
 
             val iconData = map?.get(PrefsKey.ICON_DATA) as? Map<*, *>
@@ -131,6 +135,7 @@ data class NotificationOptions(
                 putBoolean(PrefsKey.PLAY_SOUND, playSound)
                 putBoolean(PrefsKey.SHOW_WHEN, showWhen)
                 putBoolean(PrefsKey.IS_STICKY, isSticky)
+                putBoolean(PrefsKey.CAN_SWIPE_AWAY, canSwipeAway)
                 putInt(PrefsKey.VISIBILITY, visibility)
                 putString(PrefsKey.ICON_DATA, iconDataJson)
                 putString(PrefsKey.BUTTONS, buttonsJson)

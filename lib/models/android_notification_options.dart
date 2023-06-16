@@ -18,6 +18,7 @@ class AndroidNotificationOptions {
     this.playSound = false,
     this.showWhen = false,
     this.isSticky = true,
+    this.canSwipeAway = true,
     this.visibility = NotificationVisibility.VISIBILITY_PUBLIC,
     this.iconData,
     this.buttons,
@@ -62,6 +63,10 @@ class AndroidNotificationOptions {
   /// The default is `true`.
   final bool isSticky;
 
+  /// Whether user can swipe away notification.
+  /// The default is `true`.
+  final bool canSwipeAway;
+
   /// Control the level of detail displayed in notifications on the lock screen.
   /// The default is `NotificationVisibility.VISIBILITY_PUBLIC`.
   final NotificationVisibility visibility;
@@ -87,6 +92,7 @@ class AndroidNotificationOptions {
       'playSound': playSound,
       'showWhen': showWhen,
       'isSticky': isSticky,
+      'canSwipeAway': canSwipeAway,
       'visibility': visibility.rawValue,
       'iconData': iconData?.toJson(),
       'buttons': buttons?.map((e) => e.toJson()).toList(),
