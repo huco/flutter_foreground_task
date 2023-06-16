@@ -225,8 +225,8 @@ class ForegroundService : Service(), MethodChannel.MethodCallHandler {
 				nm.createNotificationChannel(channel)
 			}
 
-			val builder = Notification.Builder(this, channelId)
-			builder.setOngoing(true)
+			val builder = Notification.Builder(this, notificationOptions.channelId)
+			builder.setOngoing(!notificationOptions.canSwipeAway)
 			builder.setShowWhen(notificationOptions.showWhen)
 			builder.setSmallIcon(iconResId)
 			builder.setContentIntent(pendingIntent)
@@ -254,8 +254,8 @@ class ForegroundService : Service(), MethodChannel.MethodCallHandler {
 				startForeground(notificationOptions.id, builder.build())
 			}
 		} else {
-			val builder = NotificationCompat.Builder(this, channelId)
-			builder.setOngoing(true)
+			val builder = NotificationCompat.Builder(this, notificationOptions.channelId)
+			builder.setOngoing(!notificationOptions.canSwipeAway)
 			builder.setShowWhen(notificationOptions.showWhen)
 			builder.setSmallIcon(iconResId)
 			builder.setContentIntent(pendingIntent)
