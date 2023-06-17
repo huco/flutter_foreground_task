@@ -186,72 +186,84 @@ class ForegroundService : Service(), MethodChannel.MethodCallHandler {
 		val pm = applicationContext.packageManager
 		val iconData = notificationOptions.iconData
 		val iconBackgroundColor: Int?
-        val iconResId: Int
-        if (iconData != null) {
-            iconBackgroundColor = iconData.backgroundColorRgb?.let(::getRgbColor)
-            iconResId = getIconResIdFromIconData(iconData)
-        } else {
-            iconBackgroundColor = null
-            iconResId = getIconResIdFromAppInfo(pm)
-        }
+		val iconResId: Int
+		if (iconData != null) {
+			iconBackgroundColor = iconData.backgroundColorRgb?.let(::getRgbColor)
+			iconResId = getIconResIdFromIconData(iconData)
+		} else {
+			iconBackgroundColor = null
+			iconResId = getIconResIdFromAppInfo(pm)
+		}
 		val pendingIntent = getPendingIntent(pm)
 
-		// Create a notification and start the foreground service.
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-			val channel = NotificationChannel(
-				notificationOptions.channelId,
-				notificationOptions.channelName,
-				notificationOptions.channelImportance
-			)
-			channel.description = notificationOptions.channelDescription
-			channel.enableVibration(notificationOptions.enableVibration)
-			if (!notificationOptions.playSound) {
-				channel.setSound(null, null)
+		var notificationActive = false
+		val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+		for (notification in nm.activeNotifications) {
+			if (notification.getId() === notificationOptions.id) {
+				notificationActive = true;
+				break;
 			}
-			val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-			nm.createNotificationChannel(channel)
+		}
 
-			val builder = Notification.Builder(this, notificationOptions.channelId)
-			builder.setOngoing(!notificationOptions.canSwipeAway)
-			builder.setShowWhen(notificationOptions.showWhen)
-			builder.setSmallIcon(iconResId)
-			builder.setContentIntent(pendingIntent)
-			builder.setContentTitle(notificationOptions.contentTitle)
-			builder.setContentText(notificationOptions.contentText)
-			builder.setVisibility(notificationOptions.visibility)
-			if (iconBackgroundColor != null) {
-				builder.setColor(iconBackgroundColor)
+		// create notification only if service is not running
+		// or service is running and notification is visible
+		if (!isRunningService || notificationActive) {
+			// Create a notification and start the foreground service.
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+				val channel = NotificationChannel(
+					notificationOptions.channelId,
+					notificationOptions.channelName,
+					notificationOptions.channelImportance
+				)
+				channel.description = notificationOptions.channelDescription
+				channel.enableVibration(notificationOptions.enableVibration)
+				if (!notificationOptions.playSound) {
+					channel.setSound(null, null)
+				}
+				nm.createNotificationChannel(channel)
+
+				val builder = Notification.Builder(this, notificationOptions.channelId)
+				builder.setOngoing(!notificationOptions.canSwipeAway)
+				builder.setShowWhen(notificationOptions.showWhen)
+				builder.setSmallIcon(iconResId)
+				builder.setContentIntent(pendingIntent)
+				builder.setContentTitle(notificationOptions.contentTitle)
+				builder.setContentText(notificationOptions.contentText)
+				builder.setVisibility(notificationOptions.visibility)
+				if (iconBackgroundColor != null) {
+					builder.setColor(iconBackgroundColor)
+				}
+				for (action in buildButtonActions()) {
+					builder.addAction(action)
+				}
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+					builder.setForegroundServiceBehavior(Notification.FOREGROUND_SERVICE_IMMEDIATE)
+				}
+				startForeground(notificationOptions.id, builder.build())
+			} else {
+				val builder = NotificationCompat.Builder(this, notificationOptions.channelId)
+				builder.setOngoing(!notificationOptions.canSwipeAway)
+				builder.setShowWhen(notificationOptions.showWhen)
+				builder.setSmallIcon(iconResId)
+				builder.setContentIntent(pendingIntent)
+				builder.setContentTitle(notificationOptions.contentTitle)
+				builder.setContentText(notificationOptions.contentText)
+				builder.setVisibility(notificationOptions.visibility)
+				if (iconBackgroundColor != null) {
+					builder.color = iconBackgroundColor
+				}
+				if (!notificationOptions.enableVibration) {
+					builder.setVibrate(longArrayOf(0L))
+				}
+				if (!notificationOptions.playSound) {
+					builder.setSound(null)
+				}
+				builder.priority = notificationOptions.priority
+				for (action in buildButtonCompatActions()) {
+					builder.addAction(action)
+				}
+				startForeground(notificationOptions.id, builder.build())
 			}
-			for (action in buildButtonActions()) {
-				builder.addAction(action)
-			}
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-				builder.setForegroundServiceBehavior(Notification.FOREGROUND_SERVICE_IMMEDIATE)
-			}
-			startForeground(notificationOptions.id, builder.build())
-		} else {
-			val builder = NotificationCompat.Builder(this, notificationOptions.channelId)
-			builder.setOngoing(!notificationOptions.canSwipeAway)
-			builder.setShowWhen(notificationOptions.showWhen)
-			builder.setSmallIcon(iconResId)
-			builder.setContentIntent(pendingIntent)
-			builder.setContentTitle(notificationOptions.contentTitle)
-			builder.setContentText(notificationOptions.contentText)
-			builder.setVisibility(notificationOptions.visibility)
-			if (iconBackgroundColor != null) {
-				builder.color = iconBackgroundColor
-			}
-			if (!notificationOptions.enableVibration) {
-				builder.setVibrate(longArrayOf(0L))
-			}
-			if (!notificationOptions.playSound) {
-				builder.setSound(null)
-			}
-			builder.priority = notificationOptions.priority
-			for (action in buildButtonCompatActions()) {
-				builder.addAction(action)
-			}
-			startForeground(notificationOptions.id, builder.build())
 		}
 
 		releaseLockMode()
