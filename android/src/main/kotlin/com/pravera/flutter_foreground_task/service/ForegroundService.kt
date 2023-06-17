@@ -209,73 +209,87 @@ class ForegroundService : Service(), MethodChannel.MethodCallHandler {
 		// notification intent
 		val pendingIntent = getPendingIntent(pm)
 
-		// Create a notification and start the foreground service.
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-			val nm = getSystemService(NotificationManager::class.java)
-			if (nm.getNotificationChannel(channelId) == null) {
-				val channel = NotificationChannel(channelId, channelName, channelImportance).apply {
-					if (channelDesc != null) {
-						description = channelDesc
-					}
-					enableVibration(notificationOptions.enableVibration)
-					if (!notificationOptions.playSound) {
-						setSound(null, null)
-					}
-				}
-				nm.createNotificationChannel(channel)
+		var notificationActive = false
+		val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+		for (notification in nm.activeNotifications) {
+			if (notification.getId() === notificationOptions.id) {
+				notificationActive = true;
+				break;
 			}
+		}
 
-			val builder = Notification.Builder(this, notificationOptions.channelId)
-			builder.setOngoing(!notificationOptions.canSwipeAway)
-			builder.setShowWhen(notificationOptions.showWhen)
-			builder.setSmallIcon(iconResId)
-			builder.setContentIntent(pendingIntent)
-			builder.setContentTitle(notificationOptions.contentTitle)
-			builder.setContentText(notificationOptions.contentText)
-			builder.setVisibility(notificationOptions.visibility)
-			if (iconBackgroundColor != null) {
-				builder.setColor(iconBackgroundColor)
-			}
-			for (action in buildButtonActions()) {
-				builder.addAction(action)
-			}
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-				builder.setForegroundServiceBehavior(Notification.FOREGROUND_SERVICE_IMMEDIATE)
-			}
+		// create notification only if service is not running
+		// or service is running and notification is visible
+		if (!isRunningService || notificationActive) {
 
-			val foregroundServiceTypes = notificationOptions.foregroundServiceTypes
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && foregroundServiceTypes.isNotEmpty()) {
-				var foregroundServiceType = 0
-				for (e in foregroundServiceTypes) {
-					foregroundServiceType = foregroundServiceType or e;
+			// Create a notification and start the foreground service.
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+				val nm = getSystemService(NotificationManager::class.java)
+				if (nm.getNotificationChannel(channelId) == null) {
+					val channel = NotificationChannel(channelId, channelName, channelImportance).apply {
+						if (channelDesc != null) {
+							description = channelDesc
+						}
+						enableVibration(notificationOptions.enableVibration)
+						if (!notificationOptions.playSound) {
+							setSound(null, null)
+						}
+					}
+					nm.createNotificationChannel(channel)
 				}
-				startForeground(notificationOptions.id, builder.build(), foregroundServiceType)
+
+				val builder = Notification.Builder(this, notificationOptions.channelId)
+				builder.setOngoing(!notificationOptions.canSwipeAway)
+				builder.setShowWhen(notificationOptions.showWhen)
+				builder.setSmallIcon(iconResId)
+				builder.setContentIntent(pendingIntent)
+				builder.setContentTitle(notificationOptions.contentTitle)
+				builder.setContentText(notificationOptions.contentText)
+				builder.setVisibility(notificationOptions.visibility)
+				if (iconBackgroundColor != null) {
+					builder.setColor(iconBackgroundColor)
+				}
+				for (action in buildButtonActions()) {
+					builder.addAction(action)
+				}
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+					builder.setForegroundServiceBehavior(Notification.FOREGROUND_SERVICE_IMMEDIATE)
+				}
+
+				val foregroundServiceTypes = notificationOptions.foregroundServiceTypes
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && foregroundServiceTypes.isNotEmpty()) {
+					var foregroundServiceType = 0
+					for (e in foregroundServiceTypes) {
+						foregroundServiceType = foregroundServiceType or e;
+					}
+					startForeground(notificationOptions.id, builder.build(), foregroundServiceType)
+				} else {
+					startForeground(notificationOptions.id, builder.build())
+				}
 			} else {
+				val builder = NotificationCompat.Builder(this, notificationOptions.channelId)
+				builder.setOngoing(!notificationOptions.canSwipeAway)
+				builder.setShowWhen(notificationOptions.showWhen)
+				builder.setSmallIcon(iconResId)
+				builder.setContentIntent(pendingIntent)
+				builder.setContentTitle(notificationOptions.contentTitle)
+				builder.setContentText(notificationOptions.contentText)
+				builder.setVisibility(notificationOptions.visibility)
+				if (iconBackgroundColor != null) {
+					builder.color = iconBackgroundColor
+				}
+				if (!notificationOptions.enableVibration) {
+					builder.setVibrate(longArrayOf(0L))
+				}
+				if (!notificationOptions.playSound) {
+					builder.setSound(null)
+				}
+				builder.priority = notificationOptions.priority
+				for (action in buildButtonCompatActions()) {
+					builder.addAction(action)
+				}
 				startForeground(notificationOptions.id, builder.build())
 			}
-		} else {
-			val builder = NotificationCompat.Builder(this, notificationOptions.channelId)
-			builder.setOngoing(!notificationOptions.canSwipeAway)
-			builder.setShowWhen(notificationOptions.showWhen)
-			builder.setSmallIcon(iconResId)
-			builder.setContentIntent(pendingIntent)
-			builder.setContentTitle(notificationOptions.contentTitle)
-			builder.setContentText(notificationOptions.contentText)
-			builder.setVisibility(notificationOptions.visibility)
-			if (iconBackgroundColor != null) {
-				builder.color = iconBackgroundColor
-			}
-			if (!notificationOptions.enableVibration) {
-				builder.setVibrate(longArrayOf(0L))
-			}
-			if (!notificationOptions.playSound) {
-				builder.setSound(null)
-			}
-			builder.priority = notificationOptions.priority
-			for (action in buildButtonCompatActions()) {
-				builder.addAction(action)
-			}
-			startForeground(notificationOptions.id, builder.build())
 		}
 
 		releaseLockMode()
